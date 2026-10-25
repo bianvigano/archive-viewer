@@ -61,18 +61,18 @@ with tempfile.TemporaryDirectory(prefix='archive-browser-', dir=SCRATCH) as tmp:
                 assert page.locator('#archive-error').evaluate('(d)=>d.open')
                 page.locator('#archive-error form button').click()
                 assert main('return openTabs.length===1')
-                page.locator('#file-table-body .menu-trigger').first.click()
+                page.locator('#file-table-body tr').first.click(button='right')
                 page.locator('#context-menu button').filter(has_text='Properti').click()
                 assert page.locator('#dialog-title').text_content()=='Info Berkas'
                 page.locator('#archive-error form button').click()
-                page.locator('#file-table-body .menu-trigger').first.click()
+                page.locator('#file-table-body tr').first.click(button='right')
                 with page.expect_download() as downloaded:
                     page.locator('#context-menu button').filter(has_text='Unduh').click()
                 assert downloaded.value.suggested_filename=='hello.txt'
                 page.locator('button').filter(has_text='Hapus tab dan data sementara').click()
                 page.locator('#archive-error .danger').click()
                 page.wait_for_function('document.querySelector("#empty-archive-state") && !document.querySelector("#empty-archive-state").classList.contains("hidden")')
-                assert page.evaluate('liveURLs.size===0')
+                assert page.evaluate('window.liveURLs.size===0')
                 results.append(archive+': text >1MiB'+(', decoded image + MP4 metadata' if ffmpeg and archive!='hello.txt.gz' else '')+'; tab cleanup')
             page.locator('#file-input').set_input_files(str(tmp/'bad.zip'))
             page.wait_for_function('document.querySelector("#archive-error")?.open')
@@ -80,6 +80,34 @@ with tempfile.TemporaryDirectory(prefix='archive-browser-', dir=SCRATCH) as tmp:
             page.locator('#archive-error form button').click()
             page.locator('#file-input').set_input_files(str(tmp/'fixture.zip'))
             page.wait_for_function('document.querySelector("#active-archive-title").textContent==="fixture.zip"')
+            assert page.locator('.menu-trigger').count()==0
+            assert '⋮' not in (page.locator('#archive-tabs').text_content() or '')
+            close=page.locator('#archive-tabs .archive-tab-close').first
+            assert close.text_content()=='' and close.get_attribute('aria-label')=='Tutup fixture.zip'
+            assert close.evaluate("el=>['::before','::after'].every(p=>{const s=getComputedStyle(el,p);return s.content==='\"\"' && s.width==='1px' && s.height==='12px' && s.transform!=='none'})")
+            tab=page.locator('#archive-tabs button:not(.archive-tab-close)').first
+            tab.click(button='right')
+            assert 'Lihat Arsip' not in (page.locator('#context-menu').text_content() or '')
+            assert page.locator('#context-menu button').count()==3
+            page.keyboard.press('Escape')
+            tab.press('Shift+F10')
+            assert page.locator('#context-menu').is_visible()
+            page.keyboard.press('Escape')
+            row=page.locator('#file-table-body tr').first
+            row.focus(); row.press('ContextMenu')
+            assert page.locator('#context-menu').is_visible()
+            page.keyboard.press('Escape')
+            # Closing an inactive local tab must not activate it or retain its worker.
+            page.locator('#file-input').set_input_files(str(tmp/'fixture.tar'))
+            page.wait_for_function('document.querySelector("#active-archive-title").textContent==="fixture.tar"')
+            page.locator('#archive-tabs .archive-tab-close').first.click()
+            assert main('return openTabs.length===1 && localWorkers.size===1 && archives[activeArchiveKey].name==="fixture.tar"')
+            page.locator('#archive-tabs .archive-tab-close').first.click()
+            assert main('return openTabs.length===0 && localWorkers.size===0 && localTimers.size===0 && localPending.size===0')
+            assert page.evaluate('window.liveURLs.size===0')
+            page.locator('#file-input').set_input_files(str(tmp/'fixture.zip'))
+            page.wait_for_function('document.querySelector("#active-archive-title").textContent==="fixture.zip"')
+            results.append('context: right-click tab/file, Shift+F10/Menu, no dots/Lihat Arsip; inactive x preserves selection and releases worker')
             # Exercise real worker rejection, without mutating any archives on disk.
             assert main('return await workerRequest(activeArchiveKey,{op:"read",index:9999,limit:209715200}).then(()=>false,e=>!!e.message)')
             assert main('return localPending.size===0')
@@ -93,9 +121,9 @@ with tempfile.TemporaryDirectory(prefix='archive-browser-', dir=SCRATCH) as tmp:
             assert not errors, errors
             page.locator('#file-input').set_input_files(str(tmp/'fixture.zip'))
             page.wait_for_function('document.querySelector("#active-archive-title").textContent==="fixture.zip"')
-            page.locator('#file-table-body .menu-trigger').first.click()
+            page.locator('#file-table-body tr').first.click(button='right')
             (ROOT/'docs/screenshots').mkdir(parents=True,exist_ok=True)
-            page.screenshot(path=str(ROOT/'docs/screenshots/ui-components-preview.png'))
+            page.screenshot(path=str(ROOT/'docs/screenshots/context-menu-preview.png'))
             report={'passed':results,'errors':'invalid ZIP dialog + worker read rejection settled','cleanup':'tab and idle worker/maps/archive/Blob URLs released','post_or_upload_requests':posts,'page_errors':errors,'video':'MP4 metadata decoded' if ffmpeg else 'SKIPPED: ffmpeg absent'}
             (SCRATCH/'archive-browser-results.json').write_text(json.dumps(report,indent=2))
             print(json.dumps(report,indent=2))

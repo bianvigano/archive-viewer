@@ -311,17 +311,22 @@
         const arch = archives[key];
         const isActive = key === activeArchiveKey;
         return `
-          <button
-            type="button"
-            onclick="switchTab('${key}')"
-            class="shrink-0 whitespace-nowrap rounded border px-3 py-1.5 text-xs font-mono transition-colors focus:outline-none ${
+          <div
+            class="archive-tab shrink-0 inline-flex items-center rounded border text-xs font-mono transition-colors ${
               isActive
                 ? 'bg-slate-900 border-slate-900 text-white font-semibold shadow-sm'
                 : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'
             }"
+            oncontextmenu="openContext(event,'${key}');return false"
+            onkeydown="contextKey(event,'${key}')"
+            tabindex="0"
+            aria-expanded="false"
           >
-            ${escapeHTML(arch.name)}
-          </button><button type="button" class="menu-trigger" aria-label="Menu tab" aria-haspopup="menu" onclick="openContext(event,'${key}')">⋮</button>
+            <button type="button" class="archive-tab-label px-3 py-1.5 whitespace-nowrap focus:outline-none" onclick="switchTab('${key}')">
+              ${escapeHTML(arch.name)}
+            </button>
+            <button type="button" class="archive-tab-close px-2 py-1.5 focus:outline-none" aria-label="Tutup ${escapeHTML(arch.name)}" onclick="removeArchive(event,'${key}')"></button>
+          </div>
         `;
       }).join("");
     }
@@ -378,7 +383,7 @@
              </svg>`;
 
         return `
-          <tr class="hover:bg-slate-50/90 transition-colors group">
+          <tr class="hover:bg-slate-50/90 transition-colors group" tabindex="0" oncontextmenu="openContext(event,activeArchiveKey,${file.originalIndex});return false" onkeydown="contextKey(event,activeArchiveKey,${file.originalIndex})">
             <td class="py-2.5 pl-4 pr-2 font-mono text-slate-400 text-[11px]">${i + 1}</td>
             <td class="py-2.5 px-3">
               <div class="flex items-center gap-2.5">
@@ -401,7 +406,7 @@
                 class="inline-flex items-center px-2.5 py-1 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded transition-colors"
               >
                 Lihat
-              </button><button type="button" class="menu-trigger" aria-label="Menu berkas" aria-haspopup="menu" onclick="openContext(event,activeArchiveKey,${file.originalIndex})">⋮</button>
+              </button>
             </td>
           </tr>
         `;
@@ -596,16 +601,24 @@
       }catch(error){showArchiveError(error);}
     }
     function closeMenu(){const menu=document.getElementById('context-menu');menu.hidden=true;menu.trigger?.setAttribute('aria-expanded','false');}
+    function contextKey(event,key,index){
+      if(event.key==='ContextMenu'||(event.key==='F10'&&event.shiftKey)){event.preventDefault();event.stopPropagation();openContext(event,key,index);}
+    }
+    async function removeArchive(event,key){
+      event.stopPropagation();
+      try{if(archives[key].local)disposeLocal(key);else{const response=await fetch('/archive/'+key+'/remove',{method:'POST'});if(!response.ok)throw new Error('Gagal menutup tab');closeSingleTab(event,key);}toast('Tab ditutup.');}catch(error){showArchiveError(error);}
+    }
     function openContext(event,key,index){
+      event.preventDefault();
       closeMenu();const menu=document.getElementById('context-menu'),a=archives[key],file=index===undefined?null:a.files[index];
       const add=(label,action)=>{const button=document.createElement('button');button.type='button';button.setAttribute('role','menuitem');button.textContent=label;button.onclick=()=>{closeMenu();action();};menu.append(button);};
       menu.replaceChildren();menu.trigger=event.currentTarget;menu.trigger.setAttribute('aria-expanded','true');
-      add(file?'Lihat Konten':'Lihat Arsip',()=>{switchTab(key);if(file)openFileViewer(index);});
+      if(file)add('Lihat Konten',()=>{switchTab(key);openFileViewer(index);});
       add('Properti / Info Berkas',()=>showDialog('Info Berkas',file?file.name+'\n'+file.size+' byte':a.name+'\n'+a.files.length+' berkas\n'+(a.local?'Memori browser':'Sesi server')));
       add('Salin Nama Berkas',()=>copyValue(file?file.name:a.name));
       if(file)add('Unduh Berkas',()=>downloadFile(key,index));
-      else add('Tutup Tab',async()=>{try{if(a.local)disposeLocal(key);else{const response=await fetch('/archive/'+key+'/remove',{method:'POST'});if(!response.ok)throw new Error('Gagal menutup tab');closeSingleTab(event,key);}toast('Tab ditutup.');}catch(error){showArchiveError(error);}});
-      menu.hidden=false;const rect=event.currentTarget.getBoundingClientRect();menu.style.left=Math.max(8,Math.min(rect.right-208,innerWidth-216))+'px';menu.style.top=Math.max(8,Math.min(rect.bottom+4,innerHeight-menu.offsetHeight-8))+'px';menu.firstChild.focus();
+      else add('Tutup Tab',()=>removeArchive(event,key));
+      menu.hidden=false;const rect=event.currentTarget.getBoundingClientRect();menu.style.left=Math.max(8,Math.min((event.type==='contextmenu'?event.clientX:rect.left),innerWidth-216))+'px';menu.style.top=Math.max(8,Math.min((event.type==='contextmenu'?event.clientY:rect.bottom+4),innerHeight-menu.offsetHeight-8))+'px';menu.firstChild.focus();
     }
     document.addEventListener('click',event=>{if(!event.target.closest('#context-menu,.menu-trigger'))closeMenu();});
     document.addEventListener('keydown',event=>{
