@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Penampil Arsip</title>
+  <link rel="stylesheet" href="/ui.css">
+  <style>
+    body {
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    /* Custom scrollbar minimalis */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    /* Sembunyikan scrollbar pada bar tab horizontal */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-slate-900 selection:text-white">
+
+  <!-- Top Navigation / Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-20">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded bg-slate-900 text-white flex items-center justify-center">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
+        </div>
+        <h1 class="text-base font-semibold tracking-tight text-slate-900">Penampil Arsip</h1>
+      </div>
+
+      <!-- Status 7zz dari screenshot 5 -->
+      <div class="flex items-center gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded">
+        <svg class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <span>RAR tidak didukung oleh <code class="font-mono font-medium">7zz</code> yang terpasang.</span>
+      </div>
+    </div>
+  </header>
+
+<main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6">    <!-- VIEW 2: PENAMPIL KONTEN (GAMBAR / TEKS) -->
+    <div id="view-content" class="space-y-4">
+      
+      <!-- Top Bar: Navigasi Kembali & Info File -->
+      <div class="bg-white border border-slate-200 rounded-md p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="location.href='/'" class="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Kembali ke Daftar File
+            </button>
+            <span class="text-slate-300">|</span>
+            <span id="viewer-archive-name" class="text-xs font-mono text-slate-500"><%= archiveName %></span>
+          </div>
+          <h2 id="viewer-title" class="text-lg font-bold text-slate-900 font-mono tracking-tight">
+            Konten dari <%= fileName %>
+          </h2>
+        </div>
+
+        <!-- Controls Kanan: Prev/Next & Ukuran Gambar (khusus gambar) -->
+        <div class="flex flex-wrap items-center gap-3">
+          
+          <!-- Kontrol Ukuran Gambar (Muncul saat buka gambar) -->
+          <div id="image-size-controls" class="flex items-center gap-2">
+            <label for="image-size-select" class="text-xs font-medium text-slate-600">Ukuran Gambar:</label>
+            <select id="image-size-select" onchange="changeImageSize(this.value)" class="bg-slate-50 border border-slate-300 text-slate-800 text-xs font-medium rounded px-2.5 py-1.5 focus:outline-none focus:border-slate-500">
+              <option value="Full">Full</option>
+              <option value="Sedang" selected>Sedang</option>
+              <option value="Kecil">Kecil</option>
+            </select>
+
+            <!-- Tombol Cepat Kecil / Sedang / Full -->
+            <div class="hidden sm:inline-flex rounded border border-slate-300 bg-slate-50 p-0.5 text-xs">
+              <button type="button" onclick="changeImageSize('Kecil')" id="btn-size-Kecil" class="px-2 py-0.5 rounded text-slate-600 hover:text-slate-900">Kecil</button>
+              <button type="button" onclick="changeImageSize('Sedang')" id="btn-size-Sedang" class="px-2 py-0.5 rounded bg-white text-slate-900 font-medium shadow-sm">Sedang</button>
+              <button type="button" onclick="changeImageSize('Full')" id="btn-size-Full" class="px-2 py-0.5 rounded text-slate-600 hover:text-slate-900">Full</button>
+            </div>
+          </div>
+
+          <!-- Kontrol Teks (Muncul saat buka .txt) -->
+          <div id="text-view-controls" class="hidden flex items-center gap-2">
+            <button type="button" onclick="toggleTextWrap()" id="btn-text-wrap" class="px-2.5 py-1 text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300 transition-colors">
+              Word Wrap: Nonaktif
+            </button>
+            <button type="button" onclick="copyTextContent()" id="btn-copy-text" class="px-2.5 py-1 text-xs font-medium bg-white hover:bg-slate-50 text-slate-700 rounded border border-slate-300 transition-colors">
+              Salin Teks
+            </button>
+          </div>
+
+          <!-- Navigasi Berkas Sebelumnya / Berikutnya -->
+          <div class="inline-flex items-center rounded border border-slate-300 bg-white overflow-hidden">
+            <button type="button" id="btn-prev-file" onclick="navigateFile(-1)" class="px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none border-r border-slate-200" title="Berkas Sebelumnya">
+              ← Prev
+            </button>
+            <span id="viewer-file-position" class="px-2.5 py-1 text-[11px] font-mono text-slate-500 bg-slate-50">
+              <%= position + 1 %> / <%= fileNames.length %>
+            </span>
+            <button type="button" id="btn-next-file" onclick="navigateFile(1)" class="px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none border-l border-slate-200" title="Berkas Berikutnya">
+              Next →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Display Box -->
+      <div class="bg-white border border-slate-200 rounded-md overflow-hidden">
+        <!-- Sub-bar info berkas -->
+        <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs text-slate-500 font-mono">
+          <span id="viewer-meta-size"><%= fileSize %> byte</span>
+          <span id="viewer-meta-type"><%= mediaType %></span>
+        </div>
+
+        <!-- Area Pratinjau Gambar -->
+        <div id="image-preview-wrapper" class="p-4 sm:p-6 bg-slate-100/70 overflow-auto flex justify-start">
+          <img
+            id="viewer-image"
+            src="<%= rawUrl %>"
+            alt="Pratinjau Gambar"
+            class="border border-slate-300 bg-white shadow-sm transition-all duration-150 object-contain"
+          />
+        </div>
+
+        <!-- Area Pratinjau Teks (lorem.txt) -->
+        <div id="text-preview-wrapper" class="hidden p-4 sm:p-6 bg-white overflow-x-auto">
+          <pre id="viewer-text" class="font-mono text-xs sm:text-sm text-slate-800 leading-relaxed whitespace-pre overflow-x-auto"><%= content %></pre>
+        </div>
+
+        <% if (isVideo) { %><div class="p-4 bg-slate-100"><video controls preload="metadata" src="<%= rawUrl %>" style="max-width:100%"></video></div><% } %>
+        <!-- Footer Link Kembali (Sesuai screenshot) -->
+        <div class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+          <button type="button" onclick="location.href='/'" class="text-xs font-medium text-blue-600 hover:text-blue-800 underline">
+            Kembali ke Daftar File
+          </button>
+          <span class="text-[11px] text-slate-400">Tips: Gunakan tombol panah kiri/kanan pada keyboard untuk berpindah berkas</span>
+        </div>
+      </div>
+
+    </div>
+
+</main><script>    // Ubah Ukuran Gambar: Kecil, Sedang, Full (Sesuai screenshot 2, 3, 4)
+    function changeImageSize(size) {
+      currentImageSize = size;
+      document.getElementById("image-size-select").value = size;
+
+      const imgEl = document.getElementById("viewer-image");
+      imgEl.style.width = "";
+      imgEl.style.maxWidth = "";
+
+      if (size === "Kecil") {
+        imgEl.style.width = "360px";
+        imgEl.style.maxWidth = "100%";
+      } else if (size === "Sedang") {
+        imgEl.style.width = "720px";
+        imgEl.style.maxWidth = "100%";
+      } else if (size === "Full") {
+        imgEl.style.width = "auto";
+        imgEl.style.maxWidth = "none";
+      }
+
+      // Update state tombol segmented
+      ["Kecil", "Sedang", "Full"].forEach(s => {
+        const btn = document.getElementById("btn-size-" + s);
+        if (!btn) return;
+        if (s === size) {
+          btn.className = "px-2 py-0.5 rounded bg-white text-slate-900 font-medium shadow-sm";
+        } else {
+          btn.className = "px-2 py-0.5 rounded text-slate-600 hover:text-slate-900";
+        }
+      });
+    }
+
+    // Toggle Word Wrap pada penampil teks (lorem.txt)
+    function toggleTextWrap() {
+      isTextWrapped = !isTextWrapped;
+      const pre = document.getElementById("viewer-text");
+      const btn = document.getElementById("btn-text-wrap");
+      if (isTextWrapped) {
+        pre.classList.remove("whitespace-pre");
+        pre.classList.add("whitespace-pre-wrap", "break-words");
+        btn.textContent = "Word Wrap: Aktif";
+      } else {
+        pre.classList.add("whitespace-pre");
+        pre.classList.remove("whitespace-pre-wrap", "break-words");
+        btn.textContent = "Word Wrap: Nonaktif";
+      }
+    }
+
+    // Salin isi teks
+    function copyTextContent() {
+      const text = document.getElementById("viewer-text").textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById("btn-copy-text");
+        const old = btn.textContent;
+        btn.textContent = "Tersalin!";
+        setTimeout(() => { btn.textContent = old; }, 1500);
+      });
+    }
+
+
+const names=<%- JSON.stringify(fileNames).replace(/</g,'\u003c') %>, position=<%= position %>;
+let currentImageSize='Sedang',isTextWrapped=false;
+function navigateFile(delta) { const name=names[position+delta]; if(name) location.href='/archive/<%= archiveId %>/file/'+name.split('/').map(encodeURIComponent).join('/'); }
+document.getElementById('btn-prev-file').disabled=position===0;
+document.getElementById('btn-next-file').disabled=position===names.length-1;
+document.getElementById('image-size-controls').classList.toggle('hidden',!<%= isImage %>);
+document.getElementById('image-preview-wrapper').classList.toggle('hidden',!<%= isImage %>);
+document.getElementById('text-view-controls').classList.toggle('hidden',<%= isImage || isVideo %>);
+document.getElementById('text-preview-wrapper').classList.toggle('hidden',<%= isImage || isVideo %>);
+changeImageSize('Sedang');
+document.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA|VIDEO/.test(e.target.tagName))return; if(e.key==='ArrowLeft')navigateFile(-1);if(e.key==='ArrowRight')navigateFile(1);if(e.key==='Escape')location.href='/';});
+</script></body></html>

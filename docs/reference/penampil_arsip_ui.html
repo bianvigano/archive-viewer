@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Penampil Arsip</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    /* Custom scrollbar minimalis */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    /* Sembunyikan scrollbar pada bar tab horizontal */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-slate-900 selection:text-white">
+
+  <!-- Top Navigation / Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-20">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded bg-slate-900 text-white flex items-center justify-center">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
+        </div>
+        <h1 class="text-base font-semibold tracking-tight text-slate-900">Penampil Arsip</h1>
+      </div>
+
+      <!-- Status 7zz dari screenshot 5 -->
+      <div class="flex items-center gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded">
+        <svg class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <span>RAR tidak didukung oleh <code class="font-mono font-medium">7zz</code> yang terpasang.</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6">
+
+    <!-- VIEW 1: DAFTAR ARSIP & BERKAS -->
+    <div id="view-list" class="space-y-5">
+
+      <!-- Control Panel: Unggah & Arsip Lokal -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <!-- Box 1: Unggah Arsip -->
+        <div class="bg-white border border-slate-200 rounded-md p-4">
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2.5">
+            Unggah Arsip Baru
+          </label>
+          <form id="upload-form" class="flex items-center gap-2" onsubmit="handleUpload(event)">
+            <label class="flex-1 flex items-center gap-2.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-300 rounded text-sm cursor-pointer transition-colors overflow-hidden">
+              <span class="px-2 py-0.5 bg-white border border-slate-300 rounded text-xs font-medium text-slate-700 shrink-0 shadow-sm">
+                Choose File
+              </span>
+              <span id="file-chosen-label" class="text-slate-500 truncate text-xs font-mono">No file chosen</span>
+              <input type="file" id="file-input" accept=".zip,.7z,.tar,.gz" class="hidden" onchange="updateFileName(this)" />
+            </label>
+            <button type="submit" class="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded border border-slate-900 transition-colors shrink-0">
+              Unggah
+            </button>
+          </form>
+        </div>
+
+        <!-- Box 2: Arsip Lokal -->
+        <div class="bg-white border border-slate-200 rounded-md p-4">
+          <label for="local-archive-select" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2.5">
+            Arsip Lokal
+          </label>
+          <div class="flex items-center gap-2">
+            <div class="relative flex-1">
+              <select id="local-archive-select" class="w-full appearance-none bg-slate-50 border border-slate-300 text-slate-800 text-xs font-mono rounded px-3 py-2 pr-8 focus:outline-none focus:border-slate-500 focus:bg-white">
+                <option value="drive-download-20240721T150318Z-001.zip">drive-download-20240721T150318Z-001.zip</option>
+                <option value="test.zip">test.zip</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-500">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+            <button type="button" onclick="openSelectedArchive()" class="px-4 py-1.5 bg-white hover:bg-slate-50 text-slate-800 text-xs font-medium rounded border border-slate-300 shadow-sm transition-colors shrink-0">
+              Buka
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Active Archive Section -->
+      <div class="bg-white border border-slate-200 rounded-md overflow-hidden">
+        
+        <!-- Tabs Bar & Clear Button -->
+        <div class="bg-slate-50 border-b border-slate-200 px-3 py-2 flex items-center justify-between gap-3">
+          <!-- Daftar Tab Arsip yang Terbuka (Geser ke samping tanpa scrollbar) -->
+          <div id="archive-tabs" class="flex flex-nowrap items-center gap-1.5 overflow-x-auto overflow-y-hidden no-scrollbar flex-1 min-w-0">
+            <!-- Di-render via JS -->
+          </div>
+
+          <!-- Tombol Hapus Tab dan Data Sementara -->
+          <div class="shrink-0">
+            <button type="button" onclick="clearTemporaryData()" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition-colors whitespace-nowrap">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Hapus tab dan data sementara
+            </button>
+          </div>
+        </div>
+
+        <!-- Archive Summary Bar & Search -->
+        <div id="archive-content-wrapper">
+          <div class="px-4 py-3 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
+            <button type="button" onclick="toggleCollapseList()" class="flex items-center gap-2 text-left group focus:outline-none">
+              <svg id="collapse-chevron" class="w-3.5 h-3.5 text-slate-500 transition-transform duration-150" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+              </svg>
+              <span id="active-archive-title" class="font-mono text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+                drive-download-20240721T150318Z-001.zip
+              </span>
+              <span id="active-archive-count" class="text-xs font-medium text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+                104 berkas
+              </span>
+            </button>
+
+            <!-- Filter & Sort Controls -->
+            <div class="flex items-center gap-2">
+              <div class="relative flex-1 sm:w-60">
+                <input
+                  type="text"
+                  id="search-input"
+                  oninput="renderFileList()"
+                  placeholder="Cari nama berkas..."
+                  class="w-full pl-8 pr-3 py-1 bg-slate-50 border border-slate-300 rounded text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-slate-500"
+                />
+                <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <select id="sort-select" onchange="renderFileList()" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded px-2.5 py-1 focus:outline-none focus:border-slate-500">
+                <option value="default">Urutan Asli</option>
+                <option value="name-asc">Nama (A-Z)</option>
+                <option value="size-desc">Ukuran (Terbesar)</option>
+                <option value="size-asc">Ukuran (Terkecil)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- File Table -->
+          <div id="file-list-container" class="overflow-x-auto max-h-[600px] overflow-y-auto">
+            <table class="w-full text-left border-collapse">
+              <thead class="bg-slate-50 border-b border-slate-200 sticky top-0 z-10 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                <tr>
+                  <th class="py-2 pl-4 pr-2 w-10">#</th>
+                  <th class="py-2 px-3">Nama Berkas</th>
+                  <th class="py-2 px-3 text-right">Ukuran (Byte)</th>
+                  <th class="py-2 px-3 text-right w-28">Ukuran</th>
+                  <th class="py-2 pl-3 pr-4 text-right w-24">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="file-table-body" class="divide-y divide-slate-100 text-xs">
+                <!-- Di-render via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Empty State saat semua tab dihapus -->
+        <div id="empty-archive-state" class="hidden py-12 px-4 text-center">
+          <p class="text-sm font-medium text-slate-700">Tidak ada arsip yang sedang dibuka</p>
+          <p class="text-xs text-slate-500 mt-1">Pilih arsip lokal di atas dan klik <strong>Buka</strong>, atau unggah berkas baru.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- VIEW 2: PENAMPIL KONTEN (GAMBAR / TEKS) -->
+    <div id="view-content" class="hidden space-y-4">
+      
+      <!-- Top Bar: Navigasi Kembali & Info File -->
+      <div class="bg-white border border-slate-200 rounded-md p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="closeContentView()" class="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Kembali ke Daftar File
+            </button>
+            <span class="text-slate-300">|</span>
+            <span id="viewer-archive-name" class="text-xs font-mono text-slate-500"></span>
+          </div>
+          <h2 id="viewer-title" class="text-lg font-bold text-slate-900 font-mono tracking-tight">
+            Konten dari IMG_20240721_121200.jpg
+          </h2>
+        </div>
+
+        <!-- Controls Kanan: Prev/Next & Ukuran Gambar (khusus gambar) -->
+        <div class="flex flex-wrap items-center gap-3">
+          
+          <!-- Kontrol Ukuran Gambar (Muncul saat buka gambar) -->
+          <div id="image-size-controls" class="flex items-center gap-2">
+            <label for="image-size-select" class="text-xs font-medium text-slate-600">Ukuran Gambar:</label>
+            <select id="image-size-select" onchange="changeImageSize(this.value)" class="bg-slate-50 border border-slate-300 text-slate-800 text-xs font-medium rounded px-2.5 py-1.5 focus:outline-none focus:border-slate-500">
+              <option value="Full">Full</option>
+              <option value="Sedang" selected>Sedang</option>
+              <option value="Kecil">Kecil</option>
+            </select>
+
+            <!-- Tombol Cepat Kecil / Sedang / Full -->
+            <div class="hidden sm:inline-flex rounded border border-slate-300 bg-slate-50 p-0.5 text-xs">
+              <button type="button" onclick="changeImageSize('Kecil')" id="btn-size-Kecil" class="px-2 py-0.5 rounded text-slate-600 hover:text-slate-900">Kecil</button>
+              <button type="button" onclick="changeImageSize('Sedang')" id="btn-size-Sedang" class="px-2 py-0.5 rounded bg-white text-slate-900 font-medium shadow-sm">Sedang</button>
+              <button type="button" onclick="changeImageSize('Full')" id="btn-size-Full" class="px-2 py-0.5 rounded text-slate-600 hover:text-slate-900">Full</button>
+            </div>
+          </div>
+
+          <!-- Kontrol Teks (Muncul saat buka .txt) -->
+          <div id="text-view-controls" class="hidden flex items-center gap-2">
+            <button type="button" onclick="toggleTextWrap()" id="btn-text-wrap" class="px-2.5 py-1 text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300 transition-colors">
+              Word Wrap: Nonaktif
+            </button>
+            <button type="button" onclick="copyTextContent()" id="btn-copy-text" class="px-2.5 py-1 text-xs font-medium bg-white hover:bg-slate-50 text-slate-700 rounded border border-slate-300 transition-colors">
+              Salin Teks
+            </button>
+          </div>
+
+          <!-- Navigasi Berkas Sebelumnya / Berikutnya -->
+          <div class="inline-flex items-center rounded border border-slate-300 bg-white overflow-hidden">
+            <button type="button" id="btn-prev-file" onclick="navigateFile(-1)" class="px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none border-r border-slate-200" title="Berkas Sebelumnya">
+              ← Prev
+            </button>
+            <span id="viewer-file-position" class="px-2.5 py-1 text-[11px] font-mono text-slate-500 bg-slate-50">
+              1 / 104
+            </span>
+            <button type="button" id="btn-next-file" onclick="navigateFile(1)" class="px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none border-l border-slate-200" title="Berkas Berikutnya">
+              Next →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Display Box -->
+      <div class="bg-white border border-slate-200 rounded-md overflow-hidden">
+        <!-- Sub-bar info berkas -->
+        <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs text-slate-500 font-mono">
+          <span id="viewer-meta-size">5220437 byte (4.98 MB)</span>
+          <span id="viewer-meta-type">image/jpeg</span>
+        </div>
+
+        <!-- Area Pratinjau Gambar -->
+        <div id="image-preview-wrapper" class="p-4 sm:p-6 bg-slate-100/70 overflow-auto flex justify-start">
+          <img
+            id="viewer-image"
+            src=""
+            alt="Pratinjau Gambar"
+            class="border border-slate-300 bg-white shadow-sm transition-all duration-150 object-contain"
+          />
+        </div>
+
+        <!-- Area Pratinjau Teks (lorem.txt) -->
+        <div id="text-preview-wrapper" class="hidden p-4 sm:p-6 bg-white overflow-x-auto">
+          <pre id="viewer-text" class="font-mono text-xs sm:text-sm text-slate-800 leading-relaxed whitespace-pre overflow-x-auto"></pre>
+        </div>
+
+        <!-- Footer Link Kembali (Sesuai screenshot) -->
+        <div class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+          <button type="button" onclick="closeContentView()" class="text-xs font-medium text-blue-600 hover:text-blue-800 underline">
+            Kembali ke Daftar File
+          </button>
+          <span class="text-[11px] text-slate-400">Tips: Gunakan tombol panah kiri/kanan pada keyboard untuk berpindah berkas</span>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    // Data Arsip Persis dari Tangkapan Layar Anda
+    const INITIAL_ARCHIVES = {
+      "drive-download-20240721T150318Z-001.zip": {
+        name: "drive-download-20240721T150318Z-001.zip",
+        totalLabelCount: 104,
+        files: [
+          { name: "IMG_20240721_121200.jpg", bytes: 5220437, type: "image" },
+          { name: "IMG_20240721_114801.jpg", bytes: 4300787, type: "image" },
+          { name: "IMG_20240721_120730.jpg", bytes: 4477777, type: "image" },
+          { name: "IMG_20240721_120539.jpg", bytes: 5662260, type: "image" },
+          { name: "IMG_20240721_121159.jpg", bytes: 4022025, type: "image" },
+          { name: "IMG_20240721_113901.jpg", bytes: 5965746, type: "image" },
+          { name: "IMG_20240721_114759.jpg", bytes: 4340769, type: "image" },
+          { name: "IMG_20240721_120729.jpg", bytes: 3959823, type: "image" },
+          { name: "IMG_20240721_120726.jpg", bytes: 4096213, type: "image" },
+          { name: "IMG_20240721_113839.jpg", bytes: 5206494, type: "image" },
+          { name: "IMG_20240721_114811.jpg", bytes: 4285033, type: "image" },
+          { name: "IMG_20240721_120716.jpg", bytes: 4534884, type: "image" },
+          { name: "IMG_20240721_121203.jpg", bytes: 4665751, type: "image" },
+          { name: "IMG_20240721_113840.jpg", bytes: 5735614, type: "image" },
+          { name: "IMG_20240721_120538.jpg", bytes: 5366090, type: "image" },
+          { name: "IMG_20240721_114759_1.jpg", bytes: 4871394, type: "image" },
+          { name: "IMG_20240721_114710.jpg", bytes: 4733802, type: "image" },
+          { name: "IMG_20240721_120521.jpg", bytes: 6703864, type: "image" },
+          { name: "IMG_20240721_114712.jpg", bytes: 4712793, type: "image" },
+          { name: "IMG_20240721_114700.jpg", bytes: 4977270, type: "image" },
+          { name: "IMG_20240721_114812.jpg", bytes: 5060193, type: "image" },
+          { name: "IMG_20240721_120453.jpg", bytes: 5786566, type: "image" },
+          { name: "IMG_20240721_114702.jpg", bytes: 4846591, type: "image" },
+          { name: "IMG_20240721_120714.jpg", bytes: 4912722, type: "image" },
+          { name: "IMG_20240721_120522.jpg", bytes: 7474757, type: "image" },
+          { name: "IMG_20240721_120454.jpg", bytes: 6629003, type: "image" },
+          { name: "IMG_20240721_121204.jpg", bytes: 5291837, type: "image" },
+          { name: "IMG_20240721_120516.jpg", bytes: 6336838, type: "image" },
+          { name: "IMG_20240721_121224.jpg", bytes: 5027311, type: "image" },
+          { name: "IMG_20240721_113902_1.jpg", bytes: 6067492, type: "image" },
+          { name: "IMG_20240721_121250.jpg", bytes: 3393897, type: "image" },
+          { name: "IMG_20240721_114703.jpg", bytes: 6223987, type: "image" },
+          { name: "IMG_20240721_121247.jpg", bytes: 4048741, type: "image" },
+          { name: "IMG_20240721_120517.jpg", bytes: 7403590, type: "image" },
+          { name: "IMG_20240721_121545.jpg", bytes: 4509302, type: "image" },
+          { name: "IMG_20240721_121225.jpg", bytes: 5271450, type: "image" },
+          { name: "IMG_20240721_121608.jpg", bytes: 3400782, type: "image" }
+        ]
+      },
+      "test.zip": {
+        name: "test.zip",
+        totalLabelCount: 1,
+        files: [
+          {
+            name: "lorem.txt",
+            bytes: 1162,
+            type: "text",
+            content: "Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi.\n\nNam liber tempor cum soluta nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer possim assum. Typi non habent claritatem insitam; est usus legentis in iis qui facit eorum claritatem. Investigationes demonstraverunt lectores legere me lius quod ii legunt saepius. Claritas est etiam processus dynamicus, qui sequitur mutationem consuetudium lectorum. Mirum est notare quam littera gothica, quam nunc putamus parum claram, anteposuerit litterarum formas humanitatis per seacula quarta decima et quinta decima. Eodem modo typi, qui nunc nobis videntur parum clari, fiant sollemnes in futurum."
+          }
+        ]
+      }
+    };
+
+    // State Aplikasi
+    let archives = JSON.parse(JSON.stringify(INITIAL_ARCHIVES));
+    let openTabs = ["drive-download-20240721T150318Z-001.zip", "test.zip"];
+    let activeArchiveKey = "drive-download-20240721T150318Z-001.zip";
+    let isListCollapsed = false;
+    let currentFileIndex = 0;
+    let currentImageSize = "Sedang";
+    let isTextWrapped = false;
+
+    // Format ukuran byte ke KB / MB yang mudah dibaca
+    function formatReadableBytes(bytes) {
+      if (bytes < 1024) return bytes + " B";
+      const kb = bytes / 1024;
+      if (kb < 1024) return kb.toFixed(1) + " KB";
+      const mb = kb / 1024;
+      return mb.toFixed(2) + " MB";
+    }
+
+    // Buat placeholder SVG gambar yang bersih dan informatif saat dilihat
+    function createSampleImageDataUri(filename, bytes) {
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
+        <defs>
+          <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#e2e8f0"/>
+            <stop offset="100%" stop-color="#cbd5e1"/>
+          </linearGradient>
+        </defs>
+        <rect width="1200" height="900" fill="url(#bg)"/>
+        <rect x="40" y="40" width="1120" height="820" fill="none" stroke="#94a3b8" stroke-width="2" stroke-dasharray="8 8"/>
+        <g transform="translate(600, 420)" text-anchor="middle" font-family="Inter, sans-serif">
+          <rect x="-280" y="-110" width="560" height="220" rx="12" fill="#0f172a" opacity="0.9"/>
+          <text y="-35" fill="#f8fafc" font-size="28" font-weight="700" font-family="monospace">${filename}</text>
+          <text y="15" fill="#94a3b8" font-size="20" font-family="monospace">${bytes.toLocaleString('id-ID')} byte (${formatReadableBytes(bytes)})</text>
+          <text y="65" fill="#38bdf8" font-size="16">Pratinjau Gambar Arsip (1200 × 900 px)</text>
+        </g>
+      </svg>`;
+      return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+    }
+
+    // Render Tab Arsip Aktif
+    function renderTabs() {
+      const tabsContainer = document.getElementById("archive-tabs");
+      const contentWrapper = document.getElementById("archive-content-wrapper");
+      const emptyState = document.getElementById("empty-archive-state");
+
+      if (openTabs.length === 0) {
+        tabsContainer.innerHTML = `<span class="text-xs text-slate-400 py-1 px-2 italic whitespace-nowrap">Belum ada tab aktif</span>`;
+        contentWrapper.classList.add("hidden");
+        emptyState.classList.remove("hidden");
+        return;
+      }
+
+      contentWrapper.classList.remove("hidden");
+      emptyState.classList.add("hidden");
+
+      tabsContainer.innerHTML = openTabs.map(key => {
+        const arch = archives[key];
+        const isActive = key === activeArchiveKey;
+        return `
+          <button
+            type="button"
+            onclick="switchTab('${key}')"
+            class="shrink-0 whitespace-nowrap rounded border px-3 py-1.5 text-xs font-mono transition-colors focus:outline-none ${
+              isActive
+                ? 'bg-slate-900 border-slate-900 text-white font-semibold shadow-sm'
+                : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'
+            }"
+          >
+            ${arch.name}
+          </button>
+        `;
+      }).join("");
+    }
+
+    // Render Daftar Berkas di dalam Arsip Aktif
+    function renderFileList() {
+      const tbody = document.getElementById("file-table-body");
+      const titleEl = document.getElementById("active-archive-title");
+      const countEl = document.getElementById("active-archive-count");
+      const searchVal = document.getElementById("search-input").value.trim().toLowerCase();
+      const sortVal = document.getElementById("sort-select").value;
+
+      const arch = archives[activeArchiveKey];
+      if (!arch) return;
+
+      titleEl.textContent = arch.name;
+      const totalCount = arch.totalLabelCount || arch.files.length;
+      countEl.textContent = `${totalCount} berkas`;
+
+      // Filter dan pasang index asli
+      let indexedFiles = arch.files.map((file, idx) => ({ ...file, originalIndex: idx }));
+      if (searchVal) {
+        indexedFiles = indexedFiles.filter(f => f.name.toLowerCase().includes(searchVal));
+      }
+
+      // Urutkan
+      if (sortVal === "name-asc") {
+        indexedFiles.sort((a, b) => a.name.localeCompare(b.name));
+      } else if (sortVal === "size-desc") {
+        indexedFiles.sort((a, b) => b.bytes - a.bytes);
+      } else if (sortVal === "size-asc") {
+        indexedFiles.sort((a, b) => a.bytes - b.bytes);
+      }
+
+      if (indexedFiles.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="py-8 text-center text-slate-400 text-xs">
+              Tidak ada berkas yang cocok dengan pencarian "${searchVal}".
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = indexedFiles.map((file, i) => {
+        const isImage = file.type === "image" || /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name);
+        const iconSvg = isImage
+          ? `<svg class="w-4 h-4 text-sky-600 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+               <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+             </svg>`
+          : `<svg class="w-4 h-4 text-slate-500 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+             </svg>`;
+
+        return `
+          <tr class="hover:bg-slate-50/90 transition-colors group">
+            <td class="py-2.5 pl-4 pr-2 font-mono text-slate-400 text-[11px]">${i + 1}</td>
+            <td class="py-2.5 px-3">
+              <div class="flex items-center gap-2.5">
+                ${iconSvg}
+                <button type="button" onclick="openFileViewer(${file.originalIndex})" class="font-mono font-medium text-slate-800 hover:text-blue-600 hover:underline text-left">
+                  ${file.name}
+                </button>
+              </div>
+            </td>
+            <td class="py-2.5 px-3 text-right font-mono text-slate-500">
+              ${file.bytes} byte
+            </td>
+            <td class="py-2.5 px-3 text-right font-mono text-slate-700 font-medium">
+              ${formatReadableBytes(file.bytes)}
+            </td>
+            <td class="py-2.5 pl-3 pr-4 text-right">
+              <button
+                type="button"
+                onclick="openFileViewer(${file.originalIndex})"
+                class="inline-flex items-center px-2.5 py-1 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded transition-colors"
+              >
+                Lihat
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    // Pindah Tab Arsip
+    function switchTab(key) {
+      activeArchiveKey = key;
+      document.getElementById("local-archive-select").value = key;
+      renderTabs();
+      renderFileList();
+    }
+
+    // Tutup Satu Tab
+    function closeSingleTab(event, key) {
+      event.stopPropagation();
+      openTabs = openTabs.filter(k => k !== key);
+      if (activeArchiveKey === key) {
+        activeArchiveKey = openTabs[0] || null;
+      }
+      renderTabs();
+      if (activeArchiveKey) renderFileList();
+    }
+
+    // Buka Arsip dari Dropdown "Arsip Lokal"
+    function openSelectedArchive() {
+      const select = document.getElementById("local-archive-select");
+      const selectedKey = select.value;
+      if (!selectedKey || !archives[selectedKey]) return;
+
+      if (!openTabs.includes(selectedKey)) {
+        openTabs.push(selectedKey);
+      }
+      activeArchiveKey = selectedKey;
+      closeContentView();
+      renderTabs();
+      renderFileList();
+    }
+
+    // Hapus Tab dan Data Sementara
+    function clearTemporaryData() {
+      openTabs = [];
+      activeArchiveKey = null;
+      renderTabs();
+    }
+
+    // Collapse / Expand Daftar Berkas
+    function toggleCollapseList() {
+      isListCollapsed = !isListCollapsed;
+      const container = document.getElementById("file-list-container");
+      const chevron = document.getElementById("collapse-chevron");
+      if (isListCollapsed) {
+        container.classList.add("hidden");
+        chevron.classList.add("-rotate-90");
+      } else {
+        container.classList.remove("hidden");
+        chevron.classList.remove("-rotate-90");
+      }
+    }
+
+    // Update Label Nama File saat Choose File
+    function updateFileName(input) {
+      const label = document.getElementById("file-chosen-label");
+      if (input.files && input.files.length > 0) {
+        label.textContent = input.files[0].name;
+        label.classList.replace("text-slate-500", "text-slate-900");
+      } else {
+        label.textContent = "No file chosen";
+        label.classList.replace("text-slate-900", "text-slate-500");
+      }
+    }
+
+    // Simulasi Unggah Berkas Arsip Baru
+    function handleUpload(event) {
+      event.preventDefault();
+      const input = document.getElementById("file-input");
+      const label = document.getElementById("file-chosen-label");
+      if (!input.files || input.files.length === 0) {
+        label.textContent = "Pilih berkas terlebih dahulu!";
+        label.classList.replace("text-slate-500", "text-red-600");
+        return;
+      }
+
+      const uploadedFile = input.files[0];
+      const key = uploadedFile.name;
+
+      // Tambahkan ke daftar arsip lokal
+      archives[key] = {
+        name: key,
+        totalLabelCount: 1,
+        files: [
+          {
+            name: "README_ARCHIVE.txt",
+            bytes: uploadedFile.size || 2048,
+            type: "text",
+            content: `Arsip "${uploadedFile.name}" (${uploadedFile.size} byte) berhasil diunggah ke sesi lokal.\n\nHubungkan form ini ke endpoint backend Anda untuk mengekstrak isi berkas secara langsung menggunakan 7zz / unzip.`
+          }
+        ]
+      };
+
+      // Tambahkan ke <select> jika belum ada
+      const select = document.getElementById("local-archive-select");
+      if (![...select.options].some(o => o.value === key)) {
+        const opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = key;
+        select.appendChild(opt);
+      }
+      select.value = key;
+
+      if (!openTabs.includes(key)) {
+        openTabs.push(key);
+      }
+      activeArchiveKey = key;
+
+      // Reset input
+      input.value = "";
+      updateFileName(input);
+
+      renderTabs();
+      renderFileList();
+    }
+
+    // Buka Halaman "Konten dari [nama_file]"
+    function openFileViewer(index) {
+      const arch = archives[activeArchiveKey];
+      if (!arch || !arch.files[index]) return;
+
+      currentFileIndex = index;
+      const file = arch.files[index];
+
+      document.getElementById("view-list").classList.add("hidden");
+      document.getElementById("view-content").classList.remove("hidden");
+
+      document.getElementById("viewer-archive-name").textContent = arch.name;
+      document.getElementById("viewer-title").textContent = `Konten dari ${file.name}`;
+      document.getElementById("viewer-meta-size").textContent = `${file.bytes} byte (${formatReadableBytes(file.bytes)})`;
+      document.getElementById("viewer-file-position").textContent = `${index + 1} / ${arch.files.length}`;
+
+      document.getElementById("btn-prev-file").disabled = index <= 0;
+      document.getElementById("btn-next-file").disabled = index >= arch.files.length - 1;
+
+      const isImage = file.type === "image" || /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name);
+      const imgControls = document.getElementById("image-size-controls");
+      const txtControls = document.getElementById("text-view-controls");
+      const imgWrapper = document.getElementById("image-preview-wrapper");
+      const txtWrapper = document.getElementById("text-preview-wrapper");
+
+      if (isImage) {
+        imgControls.classList.remove("hidden");
+        txtControls.classList.add("hidden");
+        imgWrapper.classList.remove("hidden");
+        txtWrapper.classList.add("hidden");
+        document.getElementById("viewer-meta-type").textContent = "image/jpeg";
+
+        const imgEl = document.getElementById("viewer-image");
+        imgEl.src = file.url || createSampleImageDataUri(file.name, file.bytes);
+        changeImageSize(currentImageSize);
+      } else {
+        imgControls.classList.add("hidden");
+        txtControls.classList.remove("hidden");
+        imgWrapper.classList.add("hidden");
+        txtWrapper.classList.remove("hidden");
+        document.getElementById("viewer-meta-type").textContent = "text/plain; charset=utf-8";
+
+        const txtEl = document.getElementById("viewer-text");
+        txtEl.textContent = file.content || "(Konten teks kosong)";
+      }
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // Ubah Ukuran Gambar: Kecil, Sedang, Full (Sesuai screenshot 2, 3, 4)
+    function changeImageSize(size) {
+      currentImageSize = size;
+      document.getElementById("image-size-select").value = size;
+
+      const imgEl = document.getElementById("viewer-image");
+      imgEl.style.width = "";
+      imgEl.style.maxWidth = "";
+
+      if (size === "Kecil") {
+        imgEl.style.width = "360px";
+        imgEl.style.maxWidth = "100%";
+      } else if (size === "Sedang") {
+        imgEl.style.width = "720px";
+        imgEl.style.maxWidth = "100%";
+      } else if (size === "Full") {
+        imgEl.style.width = "auto";
+        imgEl.style.maxWidth = "none";
+      }
+
+      // Update state tombol segmented
+      ["Kecil", "Sedang", "Full"].forEach(s => {
+        const btn = document.getElementById("btn-size-" + s);
+        if (!btn) return;
+        if (s === size) {
+          btn.className = "px-2 py-0.5 rounded bg-white text-slate-900 font-medium shadow-sm";
+        } else {
+          btn.className = "px-2 py-0.5 rounded text-slate-600 hover:text-slate-900";
+        }
+      });
+    }
+
+    // Toggle Word Wrap pada penampil teks (lorem.txt)
+    function toggleTextWrap() {
+      isTextWrapped = !isTextWrapped;
+      const pre = document.getElementById("viewer-text");
+      const btn = document.getElementById("btn-text-wrap");
+      if (isTextWrapped) {
+        pre.classList.remove("whitespace-pre");
+        pre.classList.add("whitespace-pre-wrap", "break-words");
+        btn.textContent = "Word Wrap: Aktif";
+      } else {
+        pre.classList.add("whitespace-pre");
+        pre.classList.remove("whitespace-pre-wrap", "break-words");
+        btn.textContent = "Word Wrap: Nonaktif";
+      }
+    }
+
+    // Salin isi teks
+    function copyTextContent() {
+      const text = document.getElementById("viewer-text").textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById("btn-copy-text");
+        const old = btn.textContent;
+        btn.textContent = "Tersalin!";
+        setTimeout(() => { btn.textContent = old; }, 1500);
+      });
+    }
+
+    // Navigasi Prev / Next File
+    function navigateFile(direction) {
+      const arch = archives[activeArchiveKey];
+      if (!arch) return;
+      const nextIndex = currentFileIndex + direction;
+      if (nextIndex >= 0 && nextIndex < arch.files.length) {
+        openFileViewer(nextIndex);
+      }
+    }
+
+    // Kembali ke Daftar File
+    function closeContentView() {
+      document.getElementById("view-content").classList.add("hidden");
+      document.getElementById("view-list").classList.remove("hidden");
+    }
+
+    // Dukungan Keyboard Navigation saat melihat konten
+    document.addEventListener("keydown", (e) => {
+      const isContentViewVisible = !document.getElementById("view-content").classList.contains("hidden");
+      if (!isContentViewVisible) return;
+
+      if (e.key === "ArrowLeft") {
+        navigateFile(-1);
+      } else if (e.key === "ArrowRight") {
+        navigateFile(1);
+      } else if (e.key === "Escape") {
+        closeContentView();
+      }
+    });
+
+    // Inisialisasi awal
+    const archiveTabsEl = document.getElementById("archive-tabs");
+    archiveTabsEl.addEventListener("wheel", (e) => {
+      if (e.deltaY !== 0) {
+        e.preventDefault();
+        archiveTabsEl.scrollLeft += e.deltaY;
+      }
+    }, { passive: false });
+
+    renderTabs();
+    renderFileList();
+  </script>
+</body>
+</html>
